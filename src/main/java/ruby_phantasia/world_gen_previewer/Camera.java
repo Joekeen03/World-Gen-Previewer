@@ -1,0 +1,188 @@
+package main.java.ruby_phantasia.world_gen_previewer;
+
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
+
+import static org.lwjgl.glfw.GLFW.*;
+
+public class Camera {
+    private long windowID;
+    private int windowHeight;
+    private int windowWidth;
+
+    private Vector3f position;
+    private Vector3f target;
+    private Vector3f up;
+
+    float angleHorizontal;
+    float angleVertical;
+
+    private double lastMouseXPos;
+    private double lastMouseYPos;
+
+    private boolean onTopEdge;
+    private boolean onBottomEdge;
+    private boolean onLeftEdge;
+    private boolean onRightEdge;
+
+    private static final float forwardsSpeed = 0.02f;
+    private static final float sidewaysSpeed = 0.02f;
+    private static final float verticalSpeed = 0.02f;
+
+    // Degrees change in corresponding angle per pixels of mouse movement.
+    private static final float horizontalSensitivity = 1.0f/6.0f;
+    private static final float verticalSensitivity = 1.0f/6.0f;
+
+    private static final float MAX_VERTICAL_ANGLE = 90.0f;
+    private static final float MIN_VERTICAL_ANGLE = -90.0f;
+
+    public Camera() {
+        position = new Vector3f();
+        up = new Vector3f(0.0f, 1.0f, 0.0f);
+        target = new Vector3f(0.0f, 0.0f, 1.0f);
+    } // Camera(no args)
+
+    public Camera(long windowID, int windowHeight, int windowWidth, Vector3f position, Vector3f target, Vector3f up) {
+        this.windowID = windowID;
+        this.windowHeight = windowHeight;
+        this.windowWidth = windowWidth;
+        this.position = position;
+        this.target = target;
+        this.up = up;
+        Init();
+    } // Camera(args)
+
+    public void Init() {
+        Vector3f horizontalTarget = new Vector3f(target.x, 0.0f, target.z).normalize();
+        if (horizontalTarget.z >= 0.0f) {
+            if (horizontalTarget.x >= 0.0f) {
+                angleHorizontal = 360.0f - (float)Math.toDegrees(Math.asin(horizontalTarget.z));
+            } else {
+                angleHorizontal = 180.0f + (float)Math.toDegrees(Math.asin(horizontalTarget.z));
+            }
+        } else {
+            if (horizontalTarget.x >= 0.0f) {
+                angleHorizontal = (float)Math.toDegrees(Math.asin(-horizontalTarget.z));
+            } else {
+                angleHorizontal = 180.0f - (float)Math.toDegrees(Math.asin(-horizontalTarget.z));
+            }
+        }
+
+        angleVertical = (float)Math.toDegrees(Math.asin(target.y));
+
+        onTopEdge = false;
+        onBottomEdge = false;
+        onRightEdge = false;
+        onLeftEdge = false;
+        lastMouseXPos = windowWidth/2;
+        lastMouseYPos = windowHeight/2;
+        glfwSetCursorPos(windowID, lastMouseXPos, lastMouseYPos);
+
+        glfwSetInputMode(windowID, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // For eventual camera control.
+
+        /**
+         * My control scheme:
+         *  -MC style (mouse controls camera, cursor does not move and is invisible):
+         *  -So, need to disable cursor (GLFW_CURSOR_DISABLED)
+         *  -Keep a vertical angle and a horizontal angle; horizontal angle is angle from +X around the +Y axis,
+         *      vertical angle is angle from the horizontal plane, like with the OpenGL tutorial's camera control
+         *  -Really, only difference is how the mouse movement translates to camera motion
+         *  -Also need to, when the 'cursor' moves, change angles according to how much it's moved
+         *  -So we need to maintain the 'cursor's last position so we can calculate the difference, and update
+         *      the last position after the difference has been calculated.
+         *  -Then, just update the angles according to the difference.
+         *  -Probably want Enable()/Disable() methods that turn camera control on/off?
+         */
+    } // Init
+
+    public boolean HandleKeyPress(int key, int action) {
+        boolean consumed = false;
+        switch(key) {
+            case GLFW_KEY_A: {
+                Vector3f left = up.cross(target, new Vector3f()).normalize().mul(sidewaysSpeed);
+                position.add(left);
+                consumed = true;
+                break;
+            }
+            case GLFW_KEY_D: {
+                Vector3f right = target.cross(up, new Vector3f()).normalize().mul(sidewaysSpeed);
+                position.add(right);
+                consumed = true;
+                break;
+            }
+            case GLFW_KEY_W: {
+                // If we just use the target x & z, we run into divide by zero issues for
+                //  angleVertical == +/- 90 degrees (as x & z are zero).
+                // Solution: add the up vector's x & z values to the target x & z values.
+                //  The forwards vector is just the target vector's normalized projection onto the
+                //  horizontal plane (xz plane); therefore, it is also the up vector's normalized
+                //  projection onto the horizontal plane. This is because the up vector is the cross-product
+                //  of the right and target vectors, and the right vector is constrained to the xz plane.
+                //  Not the most complete or rigorous explanation.
+                // Could just have set the angleVertical limit to 89.9 degrees or something, but oh well.
+                Vector3f forward = new Vector3f(target.x+up.x, 0.0f, target.z+up.z).normalize().mul(forwardsSpeed);
+                position.add(forward);
+                consumed = true;
+                break;
+            }
+            case GLFW_KEY_S: {
+                Vector3f backwards = new Vector3f(target.x+up.x, 0.0f, target.z+up.z).normalize().mul(-forwardsSpeed);
+                position.add(backwards);
+                consumed = true;
+                break;
+            }
+            case GLFW_KEY_LEFT_SHIFT: {
+                position.add(0.0f, -verticalSpeed, 0.0f);
+                consumed = true;
+                break;
+            }
+            case GLFW_KEY_SPACE: {
+                position.add(0.0f, verticalSpeed, 0.0f);
+                consumed = true;
+                break;
+            }
+        }
+        System.out.println("Positon: "+position.toString());
+        return consumed;
+    } // HandleKeyPress
+
+    public boolean HandleMouseMovement(double newXPosition, double newYPosition) {
+        boolean consumed = false;
+        float deltaX = (float)(newXPosition-lastMouseXPos);
+        float deltaY = (float)(newYPosition-lastMouseYPos);
+        lastMouseXPos = newXPosition;
+        lastMouseYPos = newYPosition;
+        angleHorizontal -= (deltaX*horizontalSensitivity)%360.0f;
+        // Don't think cursor movement can be so fast that the raw angle could reach (+/-)infinity
+        float newVerticalAngleRaw = angleVertical+deltaY*verticalSensitivity;
+        angleVertical = Math.max(MIN_VERTICAL_ANGLE, Math.min(MAX_VERTICAL_ANGLE, newVerticalAngleRaw));
+        Update();
+        consumed = true;
+//        System.out.printf("New angles (v,h): %f, %f\n", angleVertical, angleHorizontal);
+        return consumed;
+    } // HandleMouseMovement
+
+    private void Update() {
+        Vector3f verticalAxis = new Vector3f(0.0f, 1.0f, 0.0f);
+//        Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotate(new Quaternionf().setAngleAxis(Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f));
+        Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f);
+        Vector3f right = verticalAxis.cross(newTargetVector, new Vector3f()).normalize();
+//        newTargetVector.rotate(new Quaternionf().setAngleAxis(Math.toRadians(angleVertical), right.x, right.y, right.z));
+        newTargetVector.rotateAxis((float)Math.toRadians(angleVertical), right.x, right.y, right.z);
+        target = newTargetVector.normalize();
+        target.cross(right, up).normalize(); // Compute new up vector
+    }
+
+    public Vector3fc getPosition() {
+        return position;
+    } // getPosition
+
+    public Vector3fc getTarget() {
+        return target;
+    } // getTarget
+
+    public Vector3fc getUp() {
+        return up;
+    } // getUp
+}

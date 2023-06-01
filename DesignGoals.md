@@ -40,11 +40,11 @@ Iffy:
 
 Some of these feel a bit out of the scope of what I want - a simple, quick, practical way to design large-scale structures, and test their generation algorithms.
 
-Basic functionality:
-* Render bloxels with simple textures (no transparency)
-* Basic mouse control of camera
-* Ability to generate a structure in full (primitives)
-* Window locked to maximized window.
+[CURRENT] Basic functionality:
+* [NYI] Render bloxels with simple textures (no transparency)
+* [DONE] Basic mouse control of camera.
+* [NYI] Ability to generate a structure in full (primitives)
+* [NYI] Window locked to maximized window.
 
 Next level:
 * Pause mouse control

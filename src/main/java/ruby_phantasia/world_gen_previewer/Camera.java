@@ -15,16 +15,13 @@ public class Camera {
     private Vector3f target;
     private Vector3f up;
 
+    // Angle in degrees from +x axis, counter-clockwise about +Y axis (looking down at xz plane along -Y).
     float angleHorizontal;
+    // Angle in degrees from horizontal plane (xz -plane), downwards (+angle below xz, -angle above xz)
     float angleVertical;
 
     private double lastMouseXPos;
     private double lastMouseYPos;
-
-    private boolean onTopEdge;
-    private boolean onBottomEdge;
-    private boolean onLeftEdge;
-    private boolean onRightEdge;
 
     private static final float forwardsSpeed = 0.02f;
     private static final float sidewaysSpeed = 0.02f;
@@ -71,10 +68,6 @@ public class Camera {
 
         angleVertical = (float)Math.toDegrees(Math.asin(target.y));
 
-        onTopEdge = false;
-        onBottomEdge = false;
-        onRightEdge = false;
-        onLeftEdge = false;
         lastMouseXPos = windowWidth/2;
         lastMouseYPos = windowHeight/2;
         glfwSetCursorPos(windowID, lastMouseXPos, lastMouseYPos);
@@ -143,7 +136,7 @@ public class Camera {
                 break;
             }
         }
-        System.out.println("Positon: "+position.toString());
+//        System.out.println("Position: "+position.toString());
         return consumed;
     } // HandleKeyPress
 
@@ -159,16 +152,23 @@ public class Camera {
         angleVertical = Math.max(MIN_VERTICAL_ANGLE, Math.min(MAX_VERTICAL_ANGLE, newVerticalAngleRaw));
         Update();
         consumed = true;
-//        System.out.printf("New angles (v,h): %f, %f\n", angleVertical, angleHorizontal);
         return consumed;
     } // HandleMouseMovement
 
     private void Update() {
+        /**
+         * Might be faster/simpler to do:
+         * Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotateX(angleHorizontal).rotateY(angleVertical).normalize();
+         * target = newTargetVector;
+         * Vector3f yAxis = new Vector3f(0.0f, 1.0f, 0.0f);
+         * Vector3f newRight = yAxis.cross(newTargetVector, new Vector3f()).normalize();
+         * newTargetVector.cross(newRight, up).normalize();
+         * Since one of the two axes we're rotating the new target vector about is the +Y axis, and the
+         * other rotation axis is constrained to the xz plane, it should work?
+         */
         Vector3f verticalAxis = new Vector3f(0.0f, 1.0f, 0.0f);
-//        Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotate(new Quaternionf().setAngleAxis(Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f));
         Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f);
         Vector3f right = verticalAxis.cross(newTargetVector, new Vector3f()).normalize();
-//        newTargetVector.rotate(new Quaternionf().setAngleAxis(Math.toRadians(angleVertical), right.x, right.y, right.z));
         newTargetVector.rotateAxis((float)Math.toRadians(angleVertical), right.x, right.y, right.z);
         target = newTargetVector.normalize();
         target.cross(right, up).normalize(); // Compute new up vector

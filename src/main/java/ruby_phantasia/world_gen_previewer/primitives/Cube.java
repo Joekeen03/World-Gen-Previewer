@@ -109,8 +109,8 @@ public class Cube implements Primitive {
         private int[][] generateSideXIndices(boolean positiveXSide) {
             final int xIndex = positiveXSide ? 1 : 0;
             int[][] indices = new int[][] {
-                    {getFlatIndex(xIndex, 0, 0), getFlatIndex(xIndex, 1, 0), getFlatIndex(xIndex, 0, 1)},
-                    {getFlatIndex(xIndex, 1, 1), getFlatIndex(xIndex, 0, 1), getFlatIndex(xIndex, 1, 0)}
+                    {getFlatIndex(xIndex, 0, 1), getFlatIndex(xIndex, 1, 0), getFlatIndex(xIndex, 0, 0)},
+                    {getFlatIndex(xIndex, 1, 0), getFlatIndex(xIndex, 0, 1), getFlatIndex(xIndex, 1, 1)}
             };
             // Reverse orientation of triangles to face outwards
             if (positiveXSide) {
@@ -122,8 +122,10 @@ public class Cube implements Primitive {
 
         private int[][] generateSideYIndices(boolean positiveYSide) {
             final int yIndex = positiveYSide ? 1 : 0;
-            int[][] indices = new int[][] {{getFlatIndex(0, yIndex, 0), getFlatIndex(1, yIndex, 0), getFlatIndex(0, yIndex, 1)},
-                    {getFlatIndex(1, yIndex, 1), getFlatIndex(0, yIndex, 1), getFlatIndex(1, yIndex, 0)}};
+            int[][] indices = new int[][] {
+                    {getFlatIndex(0, yIndex, 1), getFlatIndex(1, yIndex, 0), getFlatIndex(0, yIndex, 0)},
+                    {getFlatIndex(1, yIndex, 0), getFlatIndex(0, yIndex, 1), getFlatIndex(1, yIndex, 1)}
+            };
             // Reverse orientation of triangles to face outwards
             if (!positiveYSide) {
                 SwapInPlace(indices[0], 0, 2);
@@ -134,8 +136,10 @@ public class Cube implements Primitive {
 
         private int[][] generateSideZIndices(boolean positiveZSide) {
             final int zIndex = positiveZSide ? 1 : 0;
-            int[][] indices = new int[][] {{getFlatIndex(0, 0, zIndex), getFlatIndex(1, 0, zIndex), getFlatIndex(0, 1, zIndex)},
-                    {getFlatIndex(1, 1, zIndex), getFlatIndex(0, 1, zIndex), getFlatIndex(1, 0, zIndex)}};
+            int[][] indices = new int[][] {
+                    {getFlatIndex(0, 1, zIndex), getFlatIndex(1, 0, zIndex), getFlatIndex(0, 0, zIndex)},
+                    {getFlatIndex(1, 0, zIndex), getFlatIndex(0, 1, zIndex), getFlatIndex(1, 1, zIndex)}
+            };
             // Reverse orientation of triangles to face outwards
             if (positiveZSide) {
                 SwapInPlace(indices[0], 0, 2);
@@ -163,9 +167,7 @@ public class Cube implements Primitive {
             }
             int[][][] triangleIndices = {generateSideXIndices(false), generateSideYIndices(false), generateSideZIndices(false),
                     generateSideXIndices(true), generateSideYIndices(true), generateSideZIndices(true)};
-            // TODO Reverse indices computed in generateSide...methods, so we don't have to reverse them here.
-            int[] reversedIndices = Arrays.stream(triangleIndices).flatMap(Arrays::stream).flatMapToInt(Arrays::stream).toArray();
-            indices = IntStream.range(0, reversedIndices.length).map(index -> reversedIndices[reversedIndices.length-index-1]).toArray();
+            indices = Arrays.stream(triangleIndices).flatMap(Arrays::stream).flatMapToInt(Arrays::stream).toArray();
         }
     }
 }

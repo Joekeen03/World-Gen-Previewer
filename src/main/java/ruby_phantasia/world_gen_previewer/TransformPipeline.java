@@ -1,15 +1,14 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
+
+import java.lang.Math;
 
 public class TransformPipeline {
     public TransformPipeline(int screenWidth, int screenHeight) {
         transformation = new Matrix4f();
         scale = new Vector3f(1.0f);
-        rotation = new Vector3f();
+        rotation = new Quaternionf();
         position = new Vector3f();
         perspective = new PerspectiveInformation(screenWidth, screenHeight, (float)Math.toRadians(60.0f), 0.0f, 100.0f);
         cameraPosition = new Vector3f();
@@ -25,7 +24,7 @@ public class TransformPipeline {
         position.set(newPosition);
     }
 
-    public void SetRotation(Vector3fc newRotation) {
+    public void SetRotation(Quaternionfc newRotation) {
         rotation.set(newRotation);
     }
 
@@ -44,27 +43,20 @@ public class TransformPipeline {
         Vector3f N = new Vector3f(cameraTarget).normalize();
         Vector3f U = new Vector3f(cameraUp).cross(cameraTarget).normalize();
         Vector3f V = new Vector3f(N).cross(U);
-//        System.out.println("Vectors: U"+U+"V"+V+"N"+N);
         cameraRotation
                 .m00(U.x).m10(U.y).m20(U.z)
                 .m01(V.x).m11(V.y).m21(V.z)
                 .m02(N.x).m12(N.y).m22(N.z);
-//        cameraRotation
-//                .m00(U.x).m01(U.y).m02(U.z)
-//                .m10(V.x).m11(V.y).m12(V.z)
-//                .m20(N.x).m21(N.y).m22(N.z);
         return transformation
                 .setPerspective(perspective.FOVAngleY, perspective.aspectRatio, perspective.zNear, perspective.zFar)
                 .lookAt(cameraPosition, cameraPosition.add(cameraTarget, new Vector3f()), cameraUp)
-//                .rotateXYZ(0.0f, (float)Math.PI, 0.0f).mul(cameraRotation)
-//                .translate(new Vector3f(cameraPosition).mul(-1))
-                .translate(position).rotateXYZ(rotation).scale(scale);
+                .translate(position).rotate(rotation).scale(scale);
     }
 
     private Matrix4f transformation;
     private Vector3f scale;
     private Vector3f position;
-    private Vector3f rotation;
+    private Quaternionf rotation;
     private PerspectiveInformation perspective;
     private Vector3f cameraPosition;
     private Vector3f cameraUp; // Camera's rotation.

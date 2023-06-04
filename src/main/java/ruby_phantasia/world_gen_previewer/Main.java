@@ -1,8 +1,10 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
 //import main.java.ruby_phantasia.world_gen_previewer.old.Vector3f;
-import org.joml.Matrix4f;
+import main.java.ruby_phantasia.world_gen_previewer.primitives.Cube;
+import main.java.ruby_phantasia.world_gen_previewer.primitives.Primitive;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.*;
@@ -12,10 +14,11 @@ import java.nio.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.Functions.SetCursorPosCallback;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -43,8 +46,8 @@ public class Main {
 
     private final Path mainDirectory = Paths.get("src/main/");
     private final Path shadersDirectory = mainDirectory.resolve("resources/shaders/");
-    private final Path vertexShaderPath = shadersDirectory.resolve("vertexShader.vs");
-    private final Path fragmentShaderPath = shadersDirectory.resolve("fragmentShader.fs");
+    private final Path vertexShaderPath = shadersDirectory.resolve("vertexShader.vert");
+    private final Path fragmentShaderPath = shadersDirectory.resolve("fragmentShader.frag");
 
     public void Run() {
         System.out.println("Hello World");
@@ -125,12 +128,14 @@ public class Main {
     } // CreateShaderProgram
 
     // Creates a vertex buffer holding the cube's cubeMesh vertices; returns the buffer's ID.
-    private int SetupVertexBuffer(Cube cube) {
-        FloatBuffer vertexBuffer = memAllocFloat(cube.N_VERTICES*3);
-        for (Vector3f vertex : cube.cubeMesh.vertices) {
-            vertexBuffer.put(vertex.x);
-            vertexBuffer.put(vertex.y);
-            vertexBuffer.put(vertex.z);
+    private int SetupVertexBuffer(Primitive[] primitives) {
+        Vector3fc[] vertices = Arrays.stream(primitives).flatMap((primitive) -> Arrays.stream(primitive.GetVertices())).toArray((length) -> new Vector3fc[length]);
+        FloatBuffer vertexBuffer = memAllocFloat(vertices.length*3);
+        for (Vector3fc vertex : vertices) {
+//            vertex.get(vertexBuffer);
+            vertexBuffer.put(vertex.x());
+            vertexBuffer.put(vertex.y());
+            vertexBuffer.put(vertex.z());
         }
         vertexBuffer.flip();
 
@@ -141,20 +146,33 @@ public class Main {
     } // SetupVertexBuffer
 
     // Creates an index buffer holding the cube's cubeMesh indices; returns the buffer's ID.
-    private int SetupIndexBuffer(Cube cube) {
-        IntBuffer indexBuffer = memAllocInt(cube.cubeMesh.indices.length);
-        int[] flippedIndices = new int[cube.cubeMesh.indices.length];
-        for (int i = 0; i < cube.cubeMesh.indices.length; i++) {
-            flippedIndices[i] = cube.cubeMesh.indices[cube.cubeMesh.indices.length-i-1];
-        }
-//        indexBuffer.put(cube.cubeMesh.indices);
-        indexBuffer.put(flippedIndices);
+    private BufferInfo SetupIndexBuffer(Primitive[] primitives) {
+        // Where the indices for a given primitive start.
+        int[] offsets = new int[primitives.length];
+        int[] offset = {0};
+        int[] offsetIndex = {0};
+
+        int[] indices = Arrays.stream(primitives).flatMapToInt(primitive -> {
+            int[] primitiveIndices = primitive.GetIndices();
+            // Capture the current offset, as the mapping stream doesn't seem to get processed
+            //  until after offset is updated - when exactly? When toArray is executed?
+            int currOffset = offset[0];
+            int currIndex = offsetIndex[0];
+            IntStream stream = Arrays.stream(primitiveIndices).map(index -> index+currOffset);
+            offsets[currIndex] = currOffset;
+            offsetIndex[0]++;
+            offset[0] += primitiveIndices.length;
+            return stream;
+        }).toArray();
+
+        IntBuffer indexBuffer = memAllocInt(indices.length);
+        indexBuffer.put(indices);
         indexBuffer.flip();
 
         int cubeIBO = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL_STATIC_DRAW);
-        return cubeIBO;
+        return new BufferInfo(cubeIBO, offsets);
     } // SetupIndexBuffer
 
     private void Init() {
@@ -169,7 +187,7 @@ public class Main {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 //        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
-        window = glfwCreateWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "Hello World.", NULL, NULL);
+        window = glfwCreateWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "Hello World", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window.");
         }
@@ -186,7 +204,7 @@ public class Main {
             GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             windowWidth = pWidth.get(0);
             windowHeight = pHeight.get(0);
-            System.out.printf("Window dimensions (w,h): %d, %d", windowWidth, windowHeight);
+            System.out.printf("Window dimensions (w,h): %d, %d\n", windowWidth, windowHeight);
 
 //            glfwSetWindowPos(window, (vidMode.width()-pWidth.get(0))/2, (vidMode.height()-pHeight.get(0))/2);
 
@@ -203,10 +221,13 @@ public class Main {
 
 //        glClearColor(0.5f, 0.0f, 0.0f, 0.0f);
 
-        Cube cube = new Cube(new Vector3f(0, 0, 0.0f), 1.0f);
+        Primitive[] primitives = {
+                new Cube(new Vector3f(0, 0, 0.0f), 1.0f),
+                                    new Cube(new Vector3f(0, 2.0f, 0.0f), 1.0f)
+        };
 
-        int cubeVBO = SetupVertexBuffer(cube);
-        int cubeIBO = SetupIndexBuffer(cube);
+        int primitiveVBO = SetupVertexBuffer(primitives);
+        BufferInfo primitiveIBO = SetupIndexBuffer(primitives);
 
         // Set up shaders
         int shaderProgramID = CreateShaderProgram();
@@ -218,12 +239,9 @@ public class Main {
                 windowHeight,
                 windowWidth,
                 new Vector3f(1.0f, 1.0f, -3.0f),
-                new Vector3f(0.3f, 0.0f, 1.0f),
+                new Vector3f(0.0f, 0.0f, 1.0f),
                 new Vector3f(0.0f, 1.0f, 0.0f));
         TransformPipeline pipeline = new TransformPipeline(windowWidth, windowHeight);
-        Vector3f scale = new Vector3f(1.0f);
-        Vector3f position = new Vector3f();
-        Vector3f rotation = new Vector3f();
 
         int glTransformationMatrixLocation = glGetUniformLocation(shaderProgramID, "gWorld");
         if (glTransformationMatrixLocation == -1) {
@@ -242,7 +260,12 @@ public class Main {
             pipeline.SetScreenDimensions(newWidth, newHeight);
         });
 
-
+        // Each primitive's index in the transformation matrix array; mostly to make the 1:1 association
+        //  explicit.
+        int[] transformMatrixIndices = new int[primitives.length];
+        for (int i = 0; i < transformMatrixIndices.length; i++) {
+            transformMatrixIndices[i] = i;
+        }
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
@@ -260,18 +283,42 @@ public class Main {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             cubeScale += 0.001f;
             float scaleFactor = (float) Math.sin(cubeScale);
-            pipeline.SetScale(scale.set(scaleFactor, scaleFactor, scaleFactor));
-            pipeline.SetRotation(rotation.set(cubeScale*20, cubeScale*20, cubeScale*20));
-            pipeline.SetWorldPos(position.set(Math.sin(cubeScale*5)*0.5f, 0.0f, -3.0f));
-            pipeline.SetCamera(camera);
-            pipeline.GetTransformation().get(matrixBuffer);
-            glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
+
+            primitives[0].SetScale(scaleFactor);
+            primitives[0].SetRotationXYZ(cubeScale*20, cubeScale*20, cubeScale*20);
+            primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
 
             glEnableVertexAttribArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, primitiveVBO);
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIBO);
-            glDrawElements(GL_TRIANGLES, cube.cubeMesh.indices.length, GL_UNSIGNED_INT, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitiveIBO.GetBufferID());
+
+            for (int index = 0; index < primitives.length; index++) {
+                pipeline.SetScale(primitives[index].GetScale());
+                pipeline.SetRotation(primitives[index].GetRotation());
+                pipeline.SetWorldPos(primitives[index].GetPosition());
+                pipeline.SetCamera(camera);
+                pipeline.GetTransformation().get(matrixBuffer);
+
+                // TODO Make this an input variable for the shader, instead of a uniform; far less draw calls.
+                // TODO Add primitive color to the shader input.
+                glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
+
+                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().length, GL_UNSIGNED_INT, 0);
+            }
+//            pipeline.SetScale(primitives[0].GetScale());
+//            pipeline.SetRotation(primitives[0].GetRotation());
+//            pipeline.SetWorldPos(primitives[0].GetPosition());
+//            pipeline.SetCamera(camera);
+//            pipeline.GetTransformation().get(matrixBuffer);
+//
+//            glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
+//
+//            glEnableVertexAttribArray(0);
+//            glBindBuffer(GL_ARRAY_BUFFER, primitiveVBO);
+//            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitiveIBO.GetBufferID());
+//            glDrawElements(GL_TRIANGLES, primitives[0].GetIndices().length, GL_UNSIGNED_INT, 0);
             glDisableVertexAttribArray(0);
 
             glfwSwapBuffers(window);
@@ -281,4 +328,30 @@ public class Main {
     public static void main(String[] args) {
         new Main().Run();
     } // main
+
+    public static class BufferInfo {
+        private final int bufferID;
+        private final int[] offset;
+
+        public BufferInfo(int bufferID, int[] offset) {
+            this.bufferID = bufferID;
+            this.offset = offset;
+        }
+
+        public int GetBufferID() {
+            return bufferID;
+        }
+
+        public int GetOffset(int index) {
+            return offset[index];
+        }
+
+        @Override
+        public String toString() {
+            return "BufferInfo{" +
+                    "bufferID=" + bufferID +
+                    ", offset=" + Arrays.toString(offset) +
+                    '}';
+        }
+    }
 }

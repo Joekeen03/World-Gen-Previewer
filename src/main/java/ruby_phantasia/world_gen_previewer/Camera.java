@@ -13,6 +13,7 @@ public class Camera {
 
     private Vector3f position;
     private Vector3f target;
+    private Vector3f forward;
     private Vector3f up;
 
     // Angle in degrees from +x axis, counter-clockwise about +Y axis (looking down at xz plane along -Y).
@@ -34,17 +35,12 @@ public class Camera {
     private static final float MAX_VERTICAL_ANGLE = 90.0f;
     private static final float MIN_VERTICAL_ANGLE = -90.0f;
 
-    public Camera() {
-        position = new Vector3f();
-        up = new Vector3f(0.0f, 1.0f, 0.0f);
-        target = new Vector3f(0.0f, 0.0f, 1.0f);
-    } // Camera(no args)
-
     public Camera(long windowID, int windowHeight, int windowWidth, Vector3f position, Vector3f target, Vector3f up) {
         this.windowID = windowID;
         this.windowHeight = windowHeight;
         this.windowWidth = windowWidth;
         this.position = position;
+        this.forward = new Vector3f();
         this.target = target;
         this.up = up;
         Init();
@@ -74,6 +70,7 @@ public class Camera {
 
         glfwSetInputMode(windowID, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // For eventual camera control.
 
+        Update();
         /**
          * My control scheme:
          *  -MC style (mouse controls camera, cursor does not move and is invisible):
@@ -105,23 +102,12 @@ public class Camera {
                 break;
             }
             case GLFW_KEY_W: {
-                // If we just use the target x & z, we run into divide by zero issues for
-                //  angleVertical == +/- 90 degrees (as x & z are zero).
-                // Solution: add the up vector's x & z values to the target x & z values.
-                //  The forwards vector is just the target vector's normalized projection onto the
-                //  horizontal plane (xz plane); therefore, it is also the up vector's normalized
-                //  projection onto the horizontal plane. This is because the up vector is the cross-product
-                //  of the right and target vectors, and the right vector is constrained to the xz plane.
-                //  Not the most complete or rigorous explanation.
-                // Could just have set the angleVertical limit to 89.9 degrees or something, but oh well.
-                Vector3f forward = new Vector3f(target.x+up.x, 0.0f, target.z+up.z).normalize().mul(forwardsSpeed);
-                position.add(forward);
+                position.fma(forwardsSpeed, forward.normalize());
                 consumed = true;
                 break;
             }
             case GLFW_KEY_S: {
-                Vector3f backwards = new Vector3f(target.x+up.x, 0.0f, target.z+up.z).normalize().mul(-forwardsSpeed);
-                position.add(backwards);
+                position.fma(-forwardsSpeed, forward.normalize());
                 consumed = true;
                 break;
             }
@@ -136,7 +122,6 @@ public class Camera {
                 break;
             }
         }
-//        System.out.println("Position: "+position.toString());
         return consumed;
     } // HandleKeyPress
 
@@ -166,11 +151,14 @@ public class Camera {
          * Since one of the two axes we're rotating the new target vector about is the +Y axis, and the
          * other rotation axis is constrained to the xz plane, it should work?
          */
-        Vector3f verticalAxis = new Vector3f(0.0f, 1.0f, 0.0f);
-        Vector3f newTargetVector = new Vector3f(1.0f, 0.0f, 0.0f).rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f);
-        Vector3f right = verticalAxis.cross(newTargetVector, new Vector3f()).normalize();
-        newTargetVector.rotateAxis((float)Math.toRadians(angleVertical), right.x, right.y, right.z);
-        target = newTargetVector.normalize();
+        Vector3fc verticalAxis = new Vector3f(0.0f, 1.0f, 0.0f);
+        // Compute new forward vector.
+        forward = new Vector3f(1.0f, 0.0f, 0.0f).rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f);
+        Vector3f right = verticalAxis.cross(forward, new Vector3f()).normalize();
+
+        // Compute new target vector
+        forward.rotateAxis((float)Math.toRadians(angleVertical), right.x, right.y, right.z, target);
+        target.normalize();
         target.cross(right, up).normalize(); // Compute new up vector
     }
 

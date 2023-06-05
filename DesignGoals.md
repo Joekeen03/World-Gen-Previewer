@@ -45,7 +45,7 @@ Some of these feel a bit out of the scope of what I want - a simple, quick, prac
 * [IN-PROGRESS] Basic mouse control of camera.
 * [IN-PROGRESS] Ability to render primitives
 * [NYI] Ability to generate a structure in full (primitives)
-* [NYI] Window locked to maximized window.
+* [DONE] Window locked to maximized window.
 
 Next level:
 * Pause mouse control

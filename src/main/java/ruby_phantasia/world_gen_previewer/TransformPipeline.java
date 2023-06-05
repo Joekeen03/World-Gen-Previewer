@@ -10,7 +10,7 @@ public class TransformPipeline {
         scale = new Vector3f(1.0f);
         rotation = new Quaternionf();
         position = new Vector3f();
-        perspective = new PerspectiveInformation(screenWidth, screenHeight, (float)Math.toRadians(60.0f), 0.0f, 100.0f);
+        perspective = new PerspectiveInformation(screenWidth, screenHeight, (float)Math.toRadians(60.0f), 0.1f, 100.0f);
         cameraPosition = new Vector3f();
         cameraUp = new Vector3f(0.0f, 1.0f, 0.0f);
         cameraTarget = new Vector3f(0.0f, 0.0f, 1.0f);
@@ -47,6 +47,8 @@ public class TransformPipeline {
                 .m00(U.x).m10(U.y).m20(U.z)
                 .m01(V.x).m11(V.y).m21(V.z)
                 .m02(N.x).m12(N.y).m22(N.z);
+        System.out.println(transformation
+                .setPerspective(perspective.FOVAngleY, perspective.aspectRatio, perspective.zNear, perspective.zFar));
         return transformation
                 .setPerspective(perspective.FOVAngleY, perspective.aspectRatio, perspective.zNear, perspective.zFar)
                 .lookAt(cameraPosition, cameraPosition.add(cameraTarget, new Vector3f()), cameraUp)

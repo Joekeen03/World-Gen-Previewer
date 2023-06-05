@@ -27,9 +27,6 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * TODO:
- *  *Finish tutorial up through camera stuff, esp. moving camera
- *      -Basic camera transformations
- *      -Camera movement
  *  *Figure out voxel render engine:
  *      -voxel representation, storage
  *      -
@@ -184,16 +181,17 @@ public class Main {
 
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-//        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
         window = glfwCreateWindow(INITIAL_SCREEN_WIDTH, INITIAL_SCREEN_HEIGHT, "Hello World", NULL, NULL);
+
+        // Because using the window creation hints to maximize the screen and prevent resizing
+        //  yields a window with a little gap above the taskbar.
+        glfwMaximizeWindow(window);
+        glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_FALSE);
+
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window.");
         }
-
-//        glfwMaximizeWindow(window); // Doesn't update the drawing canvas w/in it - ends up in the lower left corner
-
 
         try (MemoryStack stack = stackPush()) {
             IntBuffer pWidth = stack.mallocInt(1);
@@ -205,6 +203,7 @@ public class Main {
             windowWidth = pWidth.get(0);
             windowHeight = pHeight.get(0);
             System.out.printf("Window dimensions (w,h): %d, %d\n", windowWidth, windowHeight);
+
 
 //            glfwSetWindowPos(window, (vidMode.width()-pWidth.get(0))/2, (vidMode.height()-pHeight.get(0))/2);
 
@@ -218,12 +217,14 @@ public class Main {
 
     private void Loop() {
         GL.createCapabilities();
+        glViewport(0, 0, windowWidth, windowHeight);
 
 //        glClearColor(0.5f, 0.0f, 0.0f, 0.0f);
 
         Primitive[] primitives = {
                 new Cube(new Vector3f(0, 0, 0.0f), 1.0f),
-                                    new Cube(new Vector3f(0, 2.0f, 0.0f), 1.0f)
+                new Cube(new Vector3f(0, 2.0f, 0.0f), 1.0f),
+                new Cube(new Vector3f(0, 1.0f, 0.0f), 1.0f)
         };
 
         int primitiveVBO = SetupVertexBuffer(primitives);
@@ -233,7 +234,7 @@ public class Main {
         int shaderProgramID = CreateShaderProgram();
 
         float cubeScale = 0.0f;
-//        Matrix4f transformationMatrix = new Matrix4f();
+
         Camera camera = new Camera(
                 window,
                 windowHeight,
@@ -252,8 +253,10 @@ public class Main {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_INDEX_ARRAY);
         glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
 
         FloatBuffer matrixBuffer = memAllocFloat(4*4);
+
 
         glfwSetWindowSizeCallback(window, (resizedWindowID, newWidth, newHeight) -> {
             glViewport(0, 0, newWidth, newHeight);
@@ -306,19 +309,6 @@ public class Main {
 
                 glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().length, GL_UNSIGNED_INT, 0);
             }
-//            pipeline.SetScale(primitives[0].GetScale());
-//            pipeline.SetRotation(primitives[0].GetRotation());
-//            pipeline.SetWorldPos(primitives[0].GetPosition());
-//            pipeline.SetCamera(camera);
-//            pipeline.GetTransformation().get(matrixBuffer);
-//
-//            glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
-//
-//            glEnableVertexAttribArray(0);
-//            glBindBuffer(GL_ARRAY_BUFFER, primitiveVBO);
-//            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitiveIBO.GetBufferID());
-//            glDrawElements(GL_TRIANGLES, primitives[0].GetIndices().length, GL_UNSIGNED_INT, 0);
             glDisableVertexAttribArray(0);
 
             glfwSwapBuffers(window);

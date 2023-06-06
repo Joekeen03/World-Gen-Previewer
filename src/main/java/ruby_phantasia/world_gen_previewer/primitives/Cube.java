@@ -1,19 +1,24 @@
 package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
+import it.unimi.dsi.fastutil.ints.IntImmutableList;
+import it.unimi.dsi.fastutil.ints.IntLists;
+import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.ObjectLists;
 import org.joml.*;
 
+import java.nio.IntBuffer;
 import java.util.Arrays;
-import java.util.stream.IntStream;
+import java.util.Collections;
+import java.util.List;
 
-public class Cube implements Primitive {
+/**
+ * A cube with its rotational origin located at its center.
+ */
+public class Cube extends Primitive {
     public static final int CORNER_ARRAY_SIZE = 2;
     public static final int N_VERTICES = CORNER_ARRAY_SIZE*CORNER_ARRAY_SIZE*CORNER_ARRAY_SIZE;
     public final CubeMesh cubeMesh;
-
-    public final Vector3f position; // Position of cube's center
-    private final Quaternionf rotation;
-    private final Vector3f scale;
-    private final Vector3f color;
 
     public Cube (final Vector3fc position, final float size) {
         this(position, size, new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(1.0f));
@@ -21,12 +26,7 @@ public class Cube implements Primitive {
 
     public Cube(final Vector3fc position, final float size, final Vector3fc facingVector, final Vector3fc upVector,
                 final Vector3fc color) {
-        this.position = new Vector3f(position);
-        Vector3fc rightVector = facingVector.cross(upVector, new Vector3f());
-        Vector3f upVectorRecalc = rightVector.cross(facingVector, new Vector3f());
-        this.rotation = new Quaternionf().setFromUnnormalized(new Matrix3f(rightVector, upVectorRecalc, facingVector));
-        this.scale = new Vector3f(1.0f);
-        this.color = new Vector3f(color);
+        super(position, NewQuaternionFromTargetUpVectors(facingVector, upVector), color);
 
         Vector3f[][][] corners = new Vector3f[CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE];
         final float halfSize = 0.5f*size;
@@ -42,63 +42,13 @@ public class Cube implements Primitive {
     }
 
     @Override
-    public void SetScale(Vector3fc scale) {
-        this.scale.set(scale);
+    public ObjectImmutableList<Vector3fc> GetVertices() {
+        return new ObjectImmutableList<Vector3fc>(cubeMesh.vertices);
     }
 
     @Override
-    public void SetScale(float scale) {
-        this.scale.set(scale);
-    }
-
-    @Override
-    public void SetPosition(Vector3fc position) {
-        this.position.set(position);
-    }
-
-    @Override
-    public void SetPosition(float x, float y, float z) {
-        this.position.set(x, y, z);
-    }
-
-    @Override
-    public void SetRotationXYZ(Vector3fc rotations) {
-        this.rotation.rotationXYZ(rotations.x(), rotations.y(), rotations.z());
-    }
-
-    @Override
-    public void SetRotationXYZ(float rotationX, float rotationY, float rotationZ) {
-        this.rotation.rotationXYZ(rotationX, rotationY, rotationZ);
-    }
-
-    @Override
-    public Vector3fc GetPosition() {
-        return position;
-    }
-
-    @Override
-    public Vector3fc[] GetVertices() {
-        return cubeMesh.vertices;
-    }
-
-    @Override
-    public int[] GetIndices() {
-        return cubeMesh.indices;
-    }
-
-    @Override
-    public Vector3fc GetColor() {
-        return color;
-    }
-
-    @Override
-    public Quaternionfc GetRotation() {
-        return rotation;
-    }
-
-    @Override
-    public Vector3fc GetScale() {
-        return scale;
+    public IntImmutableList GetIndices() {
+        return new IntImmutableList(cubeMesh.indices);
     }
 
     public static class CubeMesh {

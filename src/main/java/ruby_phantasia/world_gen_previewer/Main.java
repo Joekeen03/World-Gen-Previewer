@@ -1,6 +1,7 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
 //import main.java.ruby_phantasia.world_gen_previewer.old.Vector3f;
+import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Cube;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Primitive;
 import org.joml.Vector3f;
@@ -126,7 +127,7 @@ public class Main {
 
     // Creates a vertex buffer holding the cube's cubeMesh vertices; returns the buffer's ID.
     private int SetupVertexBuffer(Primitive[] primitives) {
-        Vector3fc[] vertices = Arrays.stream(primitives).flatMap((primitive) -> Arrays.stream(primitive.GetVertices())).toArray((length) -> new Vector3fc[length]);
+        Vector3fc[] vertices = Arrays.stream(primitives).flatMap((primitive) -> primitive.GetVertices().stream()).toArray((length) -> new Vector3fc[length]);
         FloatBuffer vertexBuffer = memAllocFloat(vertices.length*3);
         for (Vector3fc vertex : vertices) {
 //            vertex.get(vertexBuffer);
@@ -150,15 +151,15 @@ public class Main {
         int[] offsetIndex = {0};
 
         int[] indices = Arrays.stream(primitives).flatMapToInt(primitive -> {
-            int[] primitiveIndices = primitive.GetIndices();
+            IntImmutableList primitiveIndices = primitive.GetIndices();
             // Capture the current offset, as the mapping stream doesn't seem to get processed
             //  until after offset is updated - when exactly? When toArray is executed?
             int currOffset = offset[0];
             int currIndex = offsetIndex[0];
-            IntStream stream = Arrays.stream(primitiveIndices).map(index -> index+currOffset);
+            IntStream stream = primitiveIndices.intStream().map(index -> index+currOffset);
             offsets[currIndex] = currOffset;
             offsetIndex[0]++;
-            offset[0] += primitiveIndices.length;
+            offset[0] += primitiveIndices.size();
             return stream;
         }).toArray();
 
@@ -307,7 +308,7 @@ public class Main {
                 // TODO Add primitive color to the shader input.
                 glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
 
-                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().length, GL_UNSIGNED_INT, 0);
+                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().size(), GL_UNSIGNED_INT, 0);
             }
             glDisableVertexAttribArray(0);
 

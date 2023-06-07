@@ -47,8 +47,6 @@ public class TransformPipeline {
                 .m00(U.x).m10(U.y).m20(U.z)
                 .m01(V.x).m11(V.y).m21(V.z)
                 .m02(N.x).m12(N.y).m22(N.z);
-        System.out.println(transformation
-                .setPerspective(perspective.FOVAngleY, perspective.aspectRatio, perspective.zNear, perspective.zFar));
         return transformation
                 .setPerspective(perspective.FOVAngleY, perspective.aspectRatio, perspective.zNear, perspective.zFar)
                 .lookAt(cameraPosition, cameraPosition.add(cameraTarget, new Vector3f()), cameraUp)

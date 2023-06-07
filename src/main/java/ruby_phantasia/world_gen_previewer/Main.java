@@ -1,7 +1,9 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
-//import main.java.ruby_phantasia.world_gen_previewer.old.Vector3f;
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
+import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
+import main.java.ruby_phantasia.world_gen_previewer.primitives.Cone;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Cube;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Primitive;
 import org.joml.Vector3f;
@@ -16,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.stream.IntStream;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -126,10 +127,9 @@ public class Main {
     } // CreateShaderProgram
 
     // Creates a vertex buffer holding the cube's cubeMesh vertices; returns the buffer's ID.
-    private int SetupVertexBuffer(Primitive[] primitives) {
-        Vector3fc[] vertices = Arrays.stream(primitives).flatMap((primitive) -> primitive.GetVertices().stream()).toArray((length) -> new Vector3fc[length]);
-        FloatBuffer vertexBuffer = memAllocFloat(vertices.length*3);
-        for (Vector3fc vertex : vertices) {
+    private int SetupVertexBuffer(PooledVertices pooledVertices) {
+        FloatBuffer vertexBuffer = memAllocFloat(pooledVertices.vertices.length*3);
+        for (Vector3fc vertex : pooledVertices.vertices) {
 //            vertex.get(vertexBuffer);
             vertexBuffer.put(vertex.x());
             vertexBuffer.put(vertex.y());
@@ -144,33 +144,17 @@ public class Main {
     } // SetupVertexBuffer
 
     // Creates an index buffer holding the cube's cubeMesh indices; returns the buffer's ID.
-    private BufferInfo SetupIndexBuffer(Primitive[] primitives) {
+    private int SetupIndexBuffer(PooledVertices pooledVertices) {
         // Where the indices for a given primitive start.
-        int[] offsets = new int[primitives.length];
-        int[] offset = {0};
-        int[] offsetIndex = {0};
 
-        int[] indices = Arrays.stream(primitives).flatMapToInt(primitive -> {
-            IntImmutableList primitiveIndices = primitive.GetIndices();
-            // Capture the current offset, as the mapping stream doesn't seem to get processed
-            //  until after offset is updated - when exactly? When toArray is executed?
-            int currOffset = offset[0];
-            int currIndex = offsetIndex[0];
-            IntStream stream = primitiveIndices.intStream().map(index -> index+currOffset);
-            offsets[currIndex] = currOffset;
-            offsetIndex[0]++;
-            offset[0] += primitiveIndices.size();
-            return stream;
-        }).toArray();
-
-        IntBuffer indexBuffer = memAllocInt(indices.length);
-        indexBuffer.put(indices);
+        IntBuffer indexBuffer = memAllocInt(pooledVertices.indices.length);
+        indexBuffer.put(pooledVertices.indices);
         indexBuffer.flip();
 
         int cubeIBO = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL_STATIC_DRAW);
-        return new BufferInfo(cubeIBO, offsets);
+        return cubeIBO;
     } // SetupIndexBuffer
 
     private void Init() {
@@ -205,9 +189,6 @@ public class Main {
             windowHeight = pHeight.get(0);
             System.out.printf("Window dimensions (w,h): %d, %d\n", windowWidth, windowHeight);
 
-
-//            glfwSetWindowPos(window, (vidMode.width()-pWidth.get(0))/2, (vidMode.height()-pHeight.get(0))/2);
-
             glfwMakeContextCurrent(window);
 
             glfwSwapInterval(1);
@@ -223,13 +204,15 @@ public class Main {
 //        glClearColor(0.5f, 0.0f, 0.0f, 0.0f);
 
         Primitive[] primitives = {
-                new Cube(new Vector3f(0, 0, 0.0f), 1.0f),
-                new Cube(new Vector3f(0, 2.0f, 0.0f), 1.0f),
-                new Cube(new Vector3f(0, 1.0f, 0.0f), 1.0f)
+                new Cube(new Vector3f(0.0f, 0.0f, 0.0f), 1.0f),
+                new Cube(new Vector3f(0.0f, 2.0f, 0.0f), 1.0f),
+                new Cone(new Vector3f(0.0f, 1.0f, 0.0f), DefaultVectors.Z_AXIS, 1.0f, 2.0f),
         };
 
-        int primitiveVBO = SetupVertexBuffer(primitives);
-        BufferInfo primitiveIBO = SetupIndexBuffer(primitives);
+        PooledVertices pooledVertices = PooledVertices.PoolVertices(primitives);
+
+        int primitiveVBO = SetupVertexBuffer(pooledVertices);
+        int primitiveIBO = SetupIndexBuffer(pooledVertices);
 
         // Set up shaders
         int shaderProgramID = CreateShaderProgram();
@@ -293,9 +276,10 @@ public class Main {
             primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
 
             glEnableVertexAttribArray(0);
+
             glBindBuffer(GL_ARRAY_BUFFER, primitiveVBO);
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitiveIBO.GetBufferID());
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitiveIBO);
 
             for (int index = 0; index < primitives.length; index++) {
                 pipeline.SetScale(primitives[index].GetScale());
@@ -307,8 +291,7 @@ public class Main {
                 // TODO Make this an input variable for the shader, instead of a uniform; far less draw calls.
                 // TODO Add primitive color to the shader input.
                 glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
-
-                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().size(), GL_UNSIGNED_INT, 0);
+                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().size(), GL_UNSIGNED_INT, pooledVertices.primitiveIndexStarts[index]*4);
             }
             glDisableVertexAttribArray(0);
 
@@ -320,29 +303,54 @@ public class Main {
         new Main().Run();
     } // main
 
-    public static class BufferInfo {
-        private final int bufferID;
-        private final int[] offset;
+    private static class PooledVertices {
+        private final Vector3fc[] vertices;
+        private final int[] indices;
+        private final int[] primitiveIndexStarts;
 
-        public BufferInfo(int bufferID, int[] offset) {
-            this.bufferID = bufferID;
-            this.offset = offset;
+        public PooledVertices(Vector3fc[] vertices, int[] indices, int[] primitiveIndexStarts) {
+            this.vertices = vertices;
+            this.indices = indices;
+            this.primitiveIndexStarts = primitiveIndexStarts;
         }
 
-        public int GetBufferID() {
-            return bufferID;
-        }
+        public static PooledVertices PoolVertices(Primitive[] primitives) {
 
-        public int GetOffset(int index) {
-            return offset[index];
-        }
+            int[] vertexOffsets = new int[primitives.length];
+            int[] vertexOffset = {0};
+            int[] vertexOffsetIndex = {0};
 
-        @Override
-        public String toString() {
-            return "BufferInfo{" +
-                    "bufferID=" + bufferID +
-                    ", offset=" + Arrays.toString(offset) +
-                    '}';
+            Vector3fc[] pooledVertices = Arrays.stream(primitives).flatMap(primitive -> {
+                ObjectImmutableList<Vector3fc> primitiveVertices = primitive.GetVertices();
+                int currOffset = vertexOffset[0];
+                int currIndex = vertexOffsetIndex[0];
+                vertexOffsets[currIndex] = currOffset;
+                vertexOffsetIndex[0]++;
+                vertexOffset[0] += primitiveVertices.size();
+                return primitiveVertices.stream();
+            }).toArray(length -> new Vector3fc[length]);
+
+            // Where the indices for a given primitive start.
+            int[] offsetIndex = {0};
+            int[] nPrimitiveIndices = {0};
+            int[] primitiveIndexStarts = new int[primitives.length];
+
+            int[] pooledIndices = Arrays.stream(primitives).flatMapToInt(primitive -> {
+                IntImmutableList primitiveIndices = primitive.GetIndices();
+                // Capture the current offset, as the mapping stream doesn't seem to get processed
+                //  until after offset is updated - when exactly? When toArray is executed?
+                int currIndex = offsetIndex[0];
+                int currVertexOffset = vertexOffsets[currIndex];
+                int currNPrimitiveIndices = nPrimitiveIndices[0];
+
+                primitiveIndexStarts[currIndex] = currNPrimitiveIndices;
+                nPrimitiveIndices[0] += primitiveIndices.size();
+                offsetIndex[0]++;
+
+                return primitiveIndices.intStream().map(index -> index+currVertexOffset);
+            }).toArray();
+//            System.out.println(Arrays.toString(pooledIndices));
+            return new PooledVertices(pooledVertices, pooledIndices, primitiveIndexStarts);
         }
     }
 }

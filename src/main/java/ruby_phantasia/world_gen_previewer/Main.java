@@ -267,6 +267,7 @@ public class Main {
         while (!glfwWindowShouldClose(window)) {
 
             glfwPollEvents();
+            camera.Move();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             cubeScale += 0.001f;
             float scaleFactor = (float) Math.sin(cubeScale);

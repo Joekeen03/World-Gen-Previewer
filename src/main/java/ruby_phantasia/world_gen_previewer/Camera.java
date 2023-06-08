@@ -25,6 +25,13 @@ public class Camera {
     private double lastMouseXPos;
     private double lastMouseYPos;
 
+    private boolean forwardHeld;
+    private boolean backwardHeld;
+    private boolean leftHeld;
+    private boolean rightHeld;
+    private boolean upHeld;
+    private boolean downHeld;
+
     private static final float forwardsSpeed = 0.02f;
     private static final float sidewaysSpeed = 0.02f;
     private static final float verticalSpeed = 0.02f;
@@ -89,36 +96,36 @@ public class Camera {
 
     public boolean HandleKeyPress(int key, int action) {
         boolean consumed = false;
+        boolean isPressed = !(action == GLFW_RELEASE);
+
         switch(key) {
             case GLFW_KEY_A: {
-                Vector3f left = up.cross(target, new Vector3f()).normalize().mul(sidewaysSpeed);
-                position.add(left);
+                leftHeld = isPressed;
                 consumed = true;
                 break;
             }
             case GLFW_KEY_D: {
-                Vector3f right = target.cross(up, new Vector3f()).normalize().mul(sidewaysSpeed);
-                position.add(right);
+                rightHeld = isPressed;
                 consumed = true;
                 break;
             }
             case GLFW_KEY_W: {
-                position.fma(forwardsSpeed, forward.normalize());
+                forwardHeld = isPressed;
                 consumed = true;
                 break;
             }
             case GLFW_KEY_S: {
-                position.fma(-forwardsSpeed, forward.normalize());
+                backwardHeld = isPressed;
                 consumed = true;
                 break;
             }
             case GLFW_KEY_LEFT_SHIFT: {
-                position.add(0.0f, -verticalSpeed, 0.0f);
+                downHeld = isPressed;
                 consumed = true;
                 break;
             }
             case GLFW_KEY_SPACE: {
-                position.add(0.0f, verticalSpeed, 0.0f);
+                upHeld = isPressed;
                 consumed = true;
                 break;
             }
@@ -140,6 +147,32 @@ public class Camera {
         consumed = true;
         return consumed;
     } // HandleMouseMovement
+
+    public void Move() {
+        // Forwards movement
+        if (forwardHeld && !backwardHeld) { // forward and backward cancel
+            position.fma(forwardsSpeed, forward.normalize());
+        } else if (backwardHeld && !forwardHeld) {
+            position.fma(-forwardsSpeed, forward.normalize());
+        }
+
+        // Sideways movement
+        if (rightHeld && !leftHeld) { // right & left cancel
+            Vector3f right = target.cross(up, new Vector3f()).normalize().mul(sidewaysSpeed);
+            position.add(right);
+        } else if (leftHeld && !rightHeld) {
+            Vector3f left = up.cross(target, new Vector3f()).normalize().mul(sidewaysSpeed);
+            position.add(left);
+        }
+
+        // Vertical movement
+        if (upHeld && !downHeld) { // up and down cancel
+            position.add(0.0f, verticalSpeed, 0.0f);
+        } else if (downHeld && !upHeld) {
+            position.add(0.0f, -verticalSpeed, 0.0f);
+        }
+
+    }
 
     private void Update() {
         /**

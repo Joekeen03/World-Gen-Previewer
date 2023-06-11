@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
+import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.*;
 
 import java.nio.IntBuffer;
@@ -21,7 +22,7 @@ public class Cube extends Primitive {
     public final CubeMesh cubeMesh;
 
     public Cube (final Vector3fc position, final float size) {
-        this(position, size, new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(1.0f));
+        this(position, size, DefaultVectors.Z_POSITIVE, DefaultVectors.Y_POSITIVE, new Vector3f(1.0f));
     }
 
     public Cube(final Vector3fc position, final float size, final Vector3fc facingVector, final Vector3fc upVector,

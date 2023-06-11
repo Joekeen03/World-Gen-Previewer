@@ -1,5 +1,6 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
+import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.*;
 
 import java.lang.Math;
@@ -12,8 +13,8 @@ public class TransformPipeline {
         position = new Vector3f();
         perspective = new PerspectiveInformation(screenWidth, screenHeight, (float)Math.toRadians(60.0f), 0.1f, 100.0f);
         cameraPosition = new Vector3f();
-        cameraUp = new Vector3f(0.0f, 1.0f, 0.0f);
-        cameraTarget = new Vector3f(0.0f, 0.0f, 1.0f);
+        cameraUp = new Vector3f(DefaultVectors.Y_POSITIVE);
+        cameraTarget = new Vector3f(DefaultVectors.Z_POSITIVE);
     }
 
     public void SetScale(Vector3fc newScale) {

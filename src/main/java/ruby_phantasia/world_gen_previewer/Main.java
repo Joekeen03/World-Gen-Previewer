@@ -44,11 +44,13 @@ public class Main {
     private static final int INITIAL_SCREEN_WIDTH = 700;
     private static final int INITIAL_SCREEN_HEIGHT = 700;
 
-    private final Path mainDirectory = Paths.get("src/main/");
-    private final Path shadersDirectory = mainDirectory.resolve("resources/shaders/");
-    private final Path PRIMITIVE_VERTEX_SHADER_PATH = shadersDirectory.resolve("vertexShader.vert");
-    private final Path AXES_VERTEX_SHADER_PATH = shadersDirectory.resolve("AxesVertexShader.vert");
-    private final Path FRAGMENT_SHADER_PATH = shadersDirectory.resolve("fragmentShader.frag");
+    private static final boolean MAKE_IT_DANCE = true;
+
+    private static final Path mainDirectory = Paths.get("src/main/");
+    private static final Path shadersDirectory = mainDirectory.resolve("resources/shaders/");
+    private static final Path PRIMITIVE_VERTEX_SHADER_PATH = shadersDirectory.resolve("vertexShader.vert");
+    private static final Path AXES_VERTEX_SHADER_PATH = shadersDirectory.resolve("AxesVertexShader.vert");
+    private static final Path FRAGMENT_SHADER_PATH = shadersDirectory.resolve("fragmentShader.frag");
 
     public void Run() {
         System.out.println("Hello World");
@@ -240,7 +242,7 @@ public class Main {
         glClearColor(0.45f, 0.45f, 1.0f, 0.0f);
 
         Primitive[] primitives = {
-                new Cube(new Vector3f(0.0f, 0.0f, 0.0f), 1.0f),
+                new Cube(DefaultVectors.ZERO, 1.0f),
                 new Cube(new Vector3f(0.0f, 2.0f, 0.0f), 1.0f),
                 new Cone(new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 2.0f),
         };
@@ -304,9 +306,11 @@ public class Main {
             cubeScale += 0.001f;
             float scaleFactor = (float) Math.sin(cubeScale);
 
-//            primitives[0].SetScale(scaleFactor);
-//            primitives[0].SetRotationXYZ(cubeScale*20, cubeScale*20, cubeScale*20);
-//            primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
+            if (MAKE_IT_DANCE) {
+                primitives[0].SetScale(scaleFactor);
+                primitives[0].SetRotationXYZ(cubeScale*20, cubeScale*20, cubeScale*20);
+                primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
+            }
 
             glUseProgram(primitiveShaderProgram.ID);
             glEnableVertexAttribArray(0);

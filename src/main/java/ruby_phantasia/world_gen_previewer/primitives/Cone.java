@@ -3,9 +3,9 @@ package main.java.ruby_phantasia.world_gen_previewer.primitives;
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
-import org.joml.Quaternionfc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
+
+import java.lang.Math;
 
 /**
  * A cone; rotational origin is located at the center of its base.
@@ -24,6 +24,13 @@ public class Cone extends Primitive {
     // Default # vertices per unit circumference; so a radius=1 circle would have 1*2*pi*DEFAULT... vertices.
     private static final int DEFAULT_PERIMETER_RESOLUTION = 5;
 
+    /**
+     *
+     * @param position
+     * @param target direction the cone is pointed towards
+     * @param radius
+     * @param length
+     */
     public Cone(Vector3fc position, Vector3fc target, float radius, float length) {
         this(position, target, radius, length,new Vector3f(1.0f));
     }
@@ -40,7 +47,9 @@ public class Cone extends Primitive {
      *                           describing the edge (effectively a triangular prism?)
      */
     public Cone(Vector3fc position, Vector3fc target, float radius, float length, int nPerimeterVertices, Vector3fc color) {
-        super(position, NewQuaternionFromTargetUpVectors(target, DefaultVectors.Y_AXIS), color);
+        super(position, NewQuaternionFromTargetDirection(target), color);
+//        super(position, NewQuaternionFromTargetUpVectors(target, DefaultVectors.Y_POSITIVE), color);
+
         this.radius = radius;
         this.length = length;
 

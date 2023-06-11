@@ -20,12 +20,24 @@ public class TransformPipeline {
         scale.set(newScale);
     }
 
+    public void ResetScale() {
+        scale.set(1.0f);
+    }
+
     public void SetWorldPos(Vector3fc newPosition) {
         position.set(newPosition);
     }
 
+    public void ResetWorldPos() {
+        position.zero();
+    }
+
     public void SetRotation(Quaternionfc newRotation) {
         rotation.set(newRotation);
+    }
+
+    public void ResetRotation() {
+        rotation.identity();
     }
 
     public void SetCamera(Camera camera) {

@@ -1,7 +1,6 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -186,8 +185,8 @@ public class Camera {
          * other rotation axis is constrained to the xz plane, it should work?
          */
         // Compute new forward vector.
-        forward = DefaultVectors.X_AXIS.rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f, new Vector3f());
-        Vector3f right = DefaultVectors.Y_AXIS.cross(forward, new Vector3f()).normalize();
+        forward = DefaultVectors.X_POSITIVE.rotateAxis((float)Math.toRadians(angleHorizontal), 0.0f, 1.0f, 0.0f, new Vector3f());
+        Vector3f right = DefaultVectors.Y_POSITIVE.cross(forward, new Vector3f()).normalize();
 
         // Compute new target vector
         forward.rotateAxis((float)Math.toRadians(angleVertical), right.x, right.y, right.z, target);

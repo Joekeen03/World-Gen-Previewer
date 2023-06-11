@@ -2,6 +2,7 @@ package main.java.ruby_phantasia.world_gen_previewer;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import main.java.ruby_phantasia.world_gen_previewer.helper.Constants;
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Cone;
 import main.java.ruby_phantasia.world_gen_previewer.primitives.Cube;
@@ -45,8 +46,9 @@ public class Main {
 
     private final Path mainDirectory = Paths.get("src/main/");
     private final Path shadersDirectory = mainDirectory.resolve("resources/shaders/");
-    private final Path vertexShaderPath = shadersDirectory.resolve("vertexShader.vert");
-    private final Path fragmentShaderPath = shadersDirectory.resolve("fragmentShader.frag");
+    private final Path PRIMITIVE_VERTEX_SHADER_PATH = shadersDirectory.resolve("vertexShader.vert");
+    private final Path AXES_VERTEX_SHADER_PATH = shadersDirectory.resolve("AxesVertexShader.vert");
+    private final Path FRAGMENT_SHADER_PATH = shadersDirectory.resolve("fragmentShader.frag");
 
     public void Run() {
         System.out.println("Hello World");
@@ -72,7 +74,7 @@ public class Main {
         }
     } // ReadFile
 
-    private int AttachShader(int shaderProgramID, String shaderProgramText, int shaderType) {
+    private int CreateShader(String shaderProgramText, int shaderType) {
         int shaderID = glCreateShader(shaderType);
         if (shaderID == 0) {
             System.err.printf("Error creating shader type %d, quitting.\n", shaderType);
@@ -87,19 +89,18 @@ public class Main {
             System.err.printf("Error compiling shader type %d: %s\nQuitting...\n", GL_VERTEX_SHADER, output);
             System.exit(-1);
         }
-        glAttachShader(shaderProgramID, shaderID);
         return shaderID;
     } // AttachShader
 
-    private int CreateShaderProgram() {
+    private int CreateShaderProgram(int vertexShader, int fragmentShader) {
         int shaderProgramID = glCreateProgram();
         if (shaderProgramID == 0) {
             System.err.printf("Failed to create shader program, quitting...\n");
             System.exit(-1);
         }
 
-        int vertexShaderID = AttachShader(shaderProgramID, String.join("\n", ReadFile(vertexShaderPath)), GL_VERTEX_SHADER);
-        int fragmentShaderID = AttachShader(shaderProgramID, String.join("\n", ReadFile(fragmentShaderPath)), GL_FRAGMENT_SHADER);
+        glAttachShader(shaderProgramID, vertexShader);
+        glAttachShader(shaderProgramID, fragmentShader);
 
         int[] success = {0};
         glLinkProgram(shaderProgramID);
@@ -119,12 +120,24 @@ public class Main {
         }
 
         glUseProgram(shaderProgramID);
-        glDetachShader(shaderProgramID, vertexShaderID);
-        glDetachShader(shaderProgramID, fragmentShaderID);
-        glDeleteShader(vertexShaderID);
-        glDeleteShader(fragmentShaderID);
+        glDetachShader(shaderProgramID, vertexShader);
+        glDetachShader(shaderProgramID, fragmentShader);
         return shaderProgramID;
     } // CreateShaderProgram
+
+    private ShaderProgram SetupShaderProgram(String shaderName, Path vertexShaderPath, Path fragmentShaderPath) {
+        int vertexShader = CreateShader(String.join("\n", ReadFile(vertexShaderPath)), GL_VERTEX_SHADER);
+        int fragmentShader = CreateShader(String.join("\n", ReadFile(fragmentShaderPath)), GL_FRAGMENT_SHADER);
+        int shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
+        int worldTransformLocation = glGetUniformLocation(shaderProgram, "gWorld");
+        if (worldTransformLocation == -1) {
+            System.out.println("glTransformationMatrixLocation could not be determined for "+shaderName+" shader program. Quitting...");
+            System.exit(-1);
+        }
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return new ShaderProgram(shaderProgram, worldTransformLocation, shaderName);
+    }
 
     // Creates a vertex buffer holding the cube's cubeMesh vertices; returns the buffer's ID.
     private int SetupVertexBuffer(PooledVertices pooledVertices) {
@@ -156,6 +169,29 @@ public class Main {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL_STATIC_DRAW);
         return cubeIBO;
     } // SetupIndexBuffer
+
+    private int SetupAxisVertexBuffer() {
+        FloatBuffer vertexBuffer = memAllocFloat(3*3*2*2); // 3 axes, two points & 2 colors each, 3 values each
+        Vector3fc red = DefaultVectors.X_POSITIVE;
+        Vector3fc green = DefaultVectors.Y_POSITIVE;
+        Vector3fc blue = DefaultVectors.Z_POSITIVE;
+        Vector3fc[] vertices = {
+                DefaultVectors.ZERO, red, DefaultVectors.X_POSITIVE.mul(5.0f, new Vector3f()), red,
+                DefaultVectors.ZERO, green, DefaultVectors.Y_POSITIVE.mul(5.0f, new Vector3f()), green,
+                DefaultVectors.ZERO, blue, DefaultVectors.Z_POSITIVE.mul(5.0f, new Vector3f()), blue,
+        };
+        for (Vector3fc vector :
+                vertices) {
+            vertexBuffer.put(vector.x());
+            vertexBuffer.put(vector.y());
+            vertexBuffer.put(vector.z());
+        }
+        vertexBuffer.flip();
+        int coordVBO = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, coordVBO);
+        glBufferData(GL_ARRAY_BUFFER, vertexBuffer, GL_STATIC_DRAW);
+        return coordVBO;
+    }
 
     private void Init() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -201,21 +237,23 @@ public class Main {
         GL.createCapabilities();
         glViewport(0, 0, windowWidth, windowHeight);
 
-//        glClearColor(0.5f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.45f, 0.45f, 1.0f, 0.0f);
 
         Primitive[] primitives = {
                 new Cube(new Vector3f(0.0f, 0.0f, 0.0f), 1.0f),
                 new Cube(new Vector3f(0.0f, 2.0f, 0.0f), 1.0f),
-                new Cone(new Vector3f(0.0f, 1.0f, 0.0f), DefaultVectors.Z_AXIS, 1.0f, 2.0f),
+                new Cone(new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(1.0f, 1.0f, 1.0f), 1.0f, 2.0f),
         };
 
         PooledVertices pooledVertices = PooledVertices.PoolVertices(primitives);
 
         int primitiveVBO = SetupVertexBuffer(pooledVertices);
         int primitiveIBO = SetupIndexBuffer(pooledVertices);
+        int axesVBO = SetupAxisVertexBuffer();
 
         // Set up shaders
-        int shaderProgramID = CreateShaderProgram();
+        ShaderProgram primitiveShaderProgram = SetupShaderProgram("Primitives", PRIMITIVE_VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
+        ShaderProgram axesShaderProgram = SetupShaderProgram("Axes", AXES_VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 
         float cubeScale = 0.0f;
 
@@ -227,12 +265,6 @@ public class Main {
                 new Vector3f(0.0f, 0.0f, 1.0f),
                 new Vector3f(0.0f, 1.0f, 0.0f));
         TransformPipeline pipeline = new TransformPipeline(windowWidth, windowHeight);
-
-        int glTransformationMatrixLocation = glGetUniformLocation(shaderProgramID, "gWorld");
-        if (glTransformationMatrixLocation == -1) {
-            System.out.println("glTransformationMatrixLocation could not be determined. Quitting...");
-            System.exit(-1);
-        }
 
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_INDEX_ARRAY);
@@ -272,10 +304,11 @@ public class Main {
             cubeScale += 0.001f;
             float scaleFactor = (float) Math.sin(cubeScale);
 
-            primitives[0].SetScale(scaleFactor);
-            primitives[0].SetRotationXYZ(cubeScale*20, cubeScale*20, cubeScale*20);
-            primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
+//            primitives[0].SetScale(scaleFactor);
+//            primitives[0].SetRotationXYZ(cubeScale*20, cubeScale*20, cubeScale*20);
+//            primitives[0].SetPosition((float)Math.sin(cubeScale*5)*1.5f, 0.0f, 0.0f);
 
+            glUseProgram(primitiveShaderProgram.ID);
             glEnableVertexAttribArray(0);
 
             glBindBuffer(GL_ARRAY_BUFFER, primitiveVBO);
@@ -291,10 +324,30 @@ public class Main {
 
                 // TODO Make this an input variable for the shader, instead of a uniform; far less draw calls.
                 // TODO Add primitive color to the shader input.
-                glUniformMatrix4fv(glTransformationMatrixLocation, false, matrixBuffer);
-                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().size(), GL_UNSIGNED_INT, pooledVertices.primitiveIndexStarts[index]*4);
+                glUniformMatrix4fv(primitiveShaderProgram.worldTransformLocation, false, matrixBuffer);
+                glDrawElements(GL_TRIANGLES, primitives[index].GetIndices().size(), GL_UNSIGNED_INT, pooledVertices.primitiveIndexStarts[index]*Constants.GL_FLOAT_SIZE);
             }
             glDisableVertexAttribArray(0);
+
+            glUseProgram(axesShaderProgram.ID);
+            glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(0, 3, GL_FLOAT, false, 6*Constants.GL_FLOAT_SIZE, 0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, false, 6*Constants.GL_FLOAT_SIZE, 3*Constants.GL_FLOAT_SIZE);
+            pipeline.ResetScale();
+            pipeline.ResetWorldPos();
+            pipeline.ResetRotation();
+            pipeline.SetCamera(camera);
+            pipeline.GetTransformation().get(matrixBuffer);
+
+            // TODO Make this an input variable for the shader, instead of a uniform; far less draw calls.
+            // TODO Add primitive color to the shader input.
+            glUniformMatrix4fv(axesShaderProgram.worldTransformLocation, false, matrixBuffer);
+            glDrawArrays(GL_LINES, 0, 3*2);
+
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
 
             glfwSwapBuffers(window);
         }
@@ -303,6 +356,18 @@ public class Main {
     public static void main(String[] args) {
         new Main().Run();
     } // main
+
+    private static class ShaderProgram {
+        private final int ID;
+        private final int worldTransformLocation; // Location of World-View-Projection matrix uniform location
+        private final String name;
+
+        public ShaderProgram(int ID, int worldTransformLocation, String name) {
+            this.ID = ID;
+            this.worldTransformLocation = worldTransformLocation;
+            this.name = name;
+        }
+    }
 
     private static class PooledVertices {
         private final Vector3fc[] vertices;

@@ -1,4 +1,4 @@
-package main.java.ruby_phantasia.world_gen_previewer;
+package main.java.ruby_phantasia.world_gen_previewer.lwjglBackend;
 
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.Vector3f;

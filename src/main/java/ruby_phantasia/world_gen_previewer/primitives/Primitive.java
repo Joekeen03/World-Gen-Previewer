@@ -2,6 +2,7 @@ package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.Vertex;
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.*;
 
@@ -9,16 +10,14 @@ public abstract class Primitive {
     protected final Vector3f scale;
     protected final Vector3f position;
     protected final Quaternionf rotation;
-    protected final Vector3f color;
 
     private static final float EPSILON = 0.00000001f;
     private static final float EPSILON_SQUARED = EPSILON*EPSILON;
 
-    public Primitive(Vector3fc position, Quaternionfc rotation, Vector3fc color) {
+    public Primitive(Vector3fc position, Quaternionfc rotation) {
         this.scale = new Vector3f(1.0f);
         this.position = new Vector3f(position);
         this.rotation = new Quaternionf(rotation);
-        this.color = new Vector3f(color);
     }
 
     public void SetScale(Vector3fc scale) {
@@ -48,10 +47,6 @@ public abstract class Primitive {
         return position;
     }
 
-    public Vector3fc GetColor() {
-        return color;
-    }
-
     public Quaternionfc GetRotation() {
         return rotation;
     }
@@ -60,7 +55,7 @@ public abstract class Primitive {
         return scale;
     }
 
-    public abstract ObjectImmutableList<Vector3fc> GetVertices();
+    public abstract ObjectImmutableList<Vertex> GetVertices();
     public abstract IntImmutableList GetIndices();
 
     /**

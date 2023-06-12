@@ -1,17 +1,12 @@
 package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
-import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
-import it.unimi.dsi.fastutil.objects.ObjectLists;
+import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.Vertex;
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.*;
 
-import java.nio.IntBuffer;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A cube with its rotational origin located at its center.
@@ -22,12 +17,16 @@ public class Cube extends Primitive {
     public final CubeMesh cubeMesh;
 
     public Cube (final Vector3fc position, final float size) {
-        this(position, size, DefaultVectors.Z_POSITIVE, DefaultVectors.Y_POSITIVE, new Vector3f(1.0f));
+        this(position, size, DefaultVectors.Z_POSITIVE, DefaultVectors.Y_POSITIVE, new Vector4f(1.0f));
+    }
+
+    public Cube (final Vector3fc position, final float size, final Vector3fc color) {
+        this(position, size, DefaultVectors.Z_POSITIVE, DefaultVectors.Y_POSITIVE, new Vector4f(color, 1.0f));
     }
 
     public Cube(final Vector3fc position, final float size, final Vector3fc facingVector, final Vector3fc upVector,
-                final Vector3fc color) {
-        super(position, NewQuaternionFromTargetUpVectors(facingVector, upVector), color);
+                final Vector4fc color) {
+        super(position, NewQuaternionFromTargetUpVectors(facingVector, upVector));
 
         Vector3f[][][] corners = new Vector3f[CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE];
         final float halfSize = 0.5f*size;
@@ -39,12 +38,12 @@ public class Cube extends Primitive {
         corners[1][0][1] = new Vector3f(halfSize,-halfSize,halfSize);
         corners[1][1][0] = new Vector3f(halfSize,halfSize,-halfSize);
         corners[1][1][1] = new Vector3f(halfSize,halfSize,halfSize);
-        cubeMesh = new CubeMesh(corners);
+        cubeMesh = new CubeMesh(corners, color);
     }
 
     @Override
-    public ObjectImmutableList<Vector3fc> GetVertices() {
-        return new ObjectImmutableList<Vector3fc>(cubeMesh.vertices);
+    public ObjectImmutableList<Vertex> GetVertices() {
+        return new ObjectImmutableList<Vertex>(cubeMesh.vertices);
     }
 
     @Override
@@ -52,7 +51,7 @@ public class Cube extends Primitive {
         return new IntImmutableList(cubeMesh.indices);
     }
 
-    public static class CubeMesh {
+    private static class CubeMesh {
         private int getFlatIndex(int x, int y, int z) {
             return (x*CORNER_ARRAY_SIZE+y)*CORNER_ARRAY_SIZE+z;
         }
@@ -105,14 +104,16 @@ public class Cube extends Primitive {
             array[indexB] = temp;
         }
 
-        public final Vector3f[] vertices;
+        public final Vertex[] vertices;
         public final int[] indices;
-        CubeMesh(Vector3f[][][] corners) {
-            vertices = new Vector3f[N_VERTICES];
+
+        CubeMesh(Vector3f[][][] corners, Vector4fc colorArg) {
+            Vector4f color = new Vector4f(colorArg);
+            vertices = new Vertex[N_VERTICES];
             for (int x = 0; x < CORNER_ARRAY_SIZE; x++) {
                 for (int y = 0; y < CORNER_ARRAY_SIZE; y++) {
                     for (int z = 0; z < CORNER_ARRAY_SIZE; z++) {
-                        vertices[getFlatIndex(x, y, z)] = corners[x][y][z];
+                        vertices[getFlatIndex(x, y, z)] = new Vertex(corners[x][y][z], color);
                     }
                 }
             }

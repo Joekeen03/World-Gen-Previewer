@@ -2,7 +2,7 @@ package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
-import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
+import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.Vertex;
 import org.joml.*;
 
 import java.lang.Math;
@@ -13,7 +13,7 @@ import java.lang.Math;
 public class Cone extends Primitive {
     public final float radius;
     public final float length;
-    private final Vector3fc[] vertices;
+    private final Vertex[] vertices;
     private final int[] indices;
 
     private static final int N_INDICES_PER_PERIMETER_VERTEX = 2*3; // Two faces per perimeter vertex, and 3 vertices per face.
@@ -36,6 +36,10 @@ public class Cone extends Primitive {
     }
 
     public Cone(Vector3fc position, Vector3fc target, float radius, float length, Vector3fc color) {
+        this(position, target, radius, length, new Vector4f(color, 1.0f));
+    }
+
+    public Cone(Vector3fc position, Vector3fc target, float radius, float length, Vector4fc color) {
         this(position, target, radius, length, (int)Math.ceil(2*Math.PI*radius*DEFAULT_PERIMETER_RESOLUTION), color);
     }
 
@@ -46,9 +50,9 @@ public class Cone extends Primitive {
      * @param nPerimeterVertices number of vertices used for the base's perimeter. I.e. 3 -> 3 vertices
      *                           describing the edge (effectively a triangular prism?)
      */
-    public Cone(Vector3fc position, Vector3fc target, float radius, float length, int nPerimeterVertices, Vector3fc color) {
-        super(position, NewQuaternionFromTargetDirection(target), color);
-//        super(position, NewQuaternionFromTargetUpVectors(target, DefaultVectors.Y_POSITIVE), color);
+    public Cone(Vector3fc position, Vector3fc target, float radius, float length, int nPerimeterVertices, Vector4fc colorArg) {
+        super(position, NewQuaternionFromTargetDirection(target));
+        Vector4f color = new Vector4f(colorArg);
 
         this.radius = radius;
         this.length = length;
@@ -56,12 +60,12 @@ public class Cone extends Primitive {
         Vector3fc baseCenterVertex = new Vector3f(0.0f, 0.0f, 0.0f);
         Vector3fc tipVertex = new Vector3f(0.0f, length, 0.0f);
         // Maybe add ability to offset the perimeter vertices'
-        vertices = new Vector3fc[nPerimeterVertices+2];
-        vertices[BASE_CENTER_VERTEX_INDEX] = baseCenterVertex;
-        vertices[TIP_VERTEX_INDEX] = tipVertex;
+        vertices = new Vertex[nPerimeterVertices+2];
+        vertices[BASE_CENTER_VERTEX_INDEX] = new Vertex(baseCenterVertex, color);
+        vertices[TIP_VERTEX_INDEX] = new Vertex(tipVertex, color);
         for (int vertexIndex = 0; vertexIndex < nPerimeterVertices; vertexIndex++) {
             float angle = (float)(Math.PI*2/(double)nPerimeterVertices*(double)vertexIndex);
-            vertices[PERIMETER_VERTICES_START_INDEX+vertexIndex] = new Vector3f(radius, 0.0f, 0.0f).rotateY(angle);
+            vertices[PERIMETER_VERTICES_START_INDEX+vertexIndex] = new Vertex(new Vector3f(radius, 0.0f, 0.0f).rotateY(angle), color);
         }
         indices = new int[nPerimeterVertices*N_INDICES_PER_PERIMETER_VERTEX];
         for (int vertexIndex = 0; vertexIndex < nPerimeterVertices; vertexIndex++) {
@@ -77,8 +81,8 @@ public class Cone extends Primitive {
     }
 
     @Override
-    public ObjectImmutableList<Vector3fc> GetVertices() {
-        return new ObjectImmutableList<Vector3fc>(vertices);
+    public ObjectImmutableList<Vertex> GetVertices() {
+        return new ObjectImmutableList<Vertex>(vertices);
     }
 
     @Override

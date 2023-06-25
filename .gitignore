@@ -5,4 +5,7 @@ gradle/
 .gradle/
 gradlew
 gradlew.bat
+
+
 *.log
+*.dll

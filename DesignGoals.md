@@ -1,4 +1,4 @@
-Desired goals/features (in no particular order):
+## Desired goals/features (in no particular order):
 
 * Mouse control of camera - Minecraft-style, with cursor locked to center, and movement away from center moving the camera around (w/ same restrictions on up/down angle as MC)
 * Ability to pause mouse control of camera by pressing Escape; clicking on window restarts mouse control
@@ -39,20 +39,3 @@ Iffy:
 * *Maybe* a way to add/remove blocks, to get an idea of what a new feature could look like?
 
 Some of these feel a bit out of the scope of what I want - a simple, quick, practical way to design large-scale structures, and test their generation algorithms.
-
-[CURRENT] Basic functionality:
-* [NYI] Render bloxels with simple textures (no transparency)
-* [DONE] Basic control of camera.
-* [IN-PROGRESS] Ability to render primitives
-* [NYI] Ability to generate a structure in full (primitives)
-* [DONE] Window locked to maximized window.
-
-Next level:
-* Pause mouse control
-* Ability to voxelize a mesh of primitives
-* Screen captures?
-
-Third level:
-* Ability to generate a structure in full (bloxelized)
-* Render chunk/cube boundaries
-* 

@@ -4,12 +4,14 @@ import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.shape.Cylinder;
 import com.jme3.scene.shape.Sphere;
-import main.java.ruby_phantasia.world_gen_previewer.api.GenerationPrimitive;
+import main.java.ruby_phantasia.world_gen_previewer.api.GenerationCylinder_EndOrigin;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationPrimitiveVisitor;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationSphere;
-
-import java.util.ArrayList;
+import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public class PrimitiveToGeometryConvertor implements GenerationPrimitiveVisitor<Geometry> {
     final AssetManager assetManager;
@@ -33,5 +35,24 @@ public class PrimitiveToGeometryConvertor implements GenerationPrimitiveVisitor<
         sphereGeometry.setLocalTranslation(sphere.position.x(), sphere.position.y(), sphere.position.z());
         sphereGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec4fcToColorRGBA(sphere.color)));
         return sphereGeometry;
+    }
+
+    @Override
+    public Geometry visit(GenerationCylinder_EndOrigin cylinder) {
+        Cylinder cylinderMesh = new Cylinder(20, 20, cylinder.radius, cylinder.length, true);
+        Geometry cylinderGeometry = new Geometry("Cylinder", cylinderMesh);
+        Vector3f center = DefaultVectors.Z_POSITIVE.mul(cylinder.length/2, new Vector3f())
+                .rotate(cylinder.rotation).add(cylinder.endPosition);
+        SetLocalTranslationFromJOMLVector3fc(cylinderGeometry, center);
+        // FIXME implement rotation.
+        cylinderGeometry.setLocalRotation(JMEUtility.ConvertJOMLQuaternionToJMEQuaternion(cylinder.rotation));
+
+
+        cylinderGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec4fcToColorRGBA(cylinder.color)));
+        return cylinderGeometry;
+    }
+
+    private static void SetLocalTranslationFromJOMLVector3fc(Geometry geometry, Vector3fc position) {
+        geometry.setLocalTranslation(position.x(), position.y(), position.z());
     }
 }

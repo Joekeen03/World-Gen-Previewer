@@ -2,11 +2,13 @@ package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import main.java.ruby_phantasia.world_gen_previewer.helper.Utility;
 import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.Vertex;
 import main.java.ruby_phantasia.world_gen_previewer.helper.DefaultVectors;
 import org.joml.*;
 
 import java.util.Arrays;
+
 
 /**
  * A cube with its rotational origin located at its center.
@@ -26,7 +28,7 @@ public class Cube extends Primitive {
 
     public Cube(final Vector3fc position, final float size, final Vector3fc facingVector, final Vector3fc upVector,
                 final Vector4fc color) {
-        super(position, NewQuaternionFromTargetUpVectors(facingVector, upVector));
+        super(position, Utility.NewQuaternionFromTargetUpVectors(facingVector, upVector));
 
         Vector3f[][][] corners = new Vector3f[CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE][CORNER_ARRAY_SIZE];
         final float halfSize = 0.5f*size;

@@ -2,6 +2,7 @@ package main.java.ruby_phantasia.world_gen_previewer.primitives;
 
 import it.unimi.dsi.fastutil.ints.IntImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
+import main.java.ruby_phantasia.world_gen_previewer.helper.Utility;
 import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.Vertex;
 import org.joml.*;
 
@@ -51,7 +52,7 @@ public class Cone extends Primitive {
      *                           describing the edge (effectively a triangular prism?)
      */
     public Cone(Vector3fc position, Vector3fc target, float radius, float length, int nPerimeterVertices, Vector4fc colorArg) {
-        super(position, NewQuaternionFromTargetDirection(target));
+        super(position, Utility.NewQuaternionFromTargetDirection(target));
         Vector4f color = new Vector4f(colorArg);
 
         this.radius = radius;

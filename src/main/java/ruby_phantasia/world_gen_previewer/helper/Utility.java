@@ -28,6 +28,6 @@ public class Utility {
      * @return
      */
     public static Quaternionf NewQuaternionFromTargetDirection(Vector3fc target) {
-        return new Quaternionf().rotationTo(DefaultVectors.Y_POSITIVE, target);
+        return new Quaternionf().rotationTo(DefaultVectors.Z_POSITIVE, target);
     }
 }

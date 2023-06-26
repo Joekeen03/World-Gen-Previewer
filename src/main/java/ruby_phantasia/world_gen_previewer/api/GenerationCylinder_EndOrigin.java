@@ -8,7 +8,7 @@ import org.joml.Vector3fc;
 import org.joml.Vector4fc;
 
 /**
- * A cylinder with its local origin (centerpoint of rotation) at the center one end, not at its center.
+ * A cylinder with its local origin (centerpoint of rotation) at the center of one end, not centered between its ends.
  * Specifically, if not rotated at all, the cylinder extends from the local origin along the +z axis.
  */
 public class GenerationCylinder_EndOrigin implements GenerationPrimitive {
@@ -22,7 +22,7 @@ public class GenerationCylinder_EndOrigin implements GenerationPrimitive {
         this.radius = radius;
         this.length = length;
         this.endPosition = endPosition;
-        this.rotation = new Quaternionf().rotationTo(DefaultVectors.Z_POSITIVE, target);
+        this.rotation = Utility.NewQuaternionFromTargetDirection(target);
         this.color = color;
     }
 

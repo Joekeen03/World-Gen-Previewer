@@ -9,7 +9,8 @@ import org.joml.*;
 import java.lang.Math;
 
 /**
- * A cone; rotational origin is located at the center of its base.
+ * A cone with its local origin (centerpoint of rotation) at the center of its base.
+ * Specifically, if not rotated at all, the cone extends from the local origin along the +z axis.
  */
 public class Cone extends Primitive {
     public final float radius;
@@ -42,7 +43,7 @@ public class Cone extends Primitive {
 
     public Cone(Vector3fc position, Vector3fc target, float radius, float length, Vector4fc color) {
         this(position, target, radius, length, (int)Math.ceil(2*Math.PI*radius*DEFAULT_PERIMETER_RESOLUTION), color);
-    }
+    } // Cone(5-arg, Vector4fc color)
 
     /**
      *
@@ -59,14 +60,14 @@ public class Cone extends Primitive {
         this.length = length;
 
         Vector3fc baseCenterVertex = new Vector3f(0.0f, 0.0f, 0.0f);
-        Vector3fc tipVertex = new Vector3f(0.0f, length, 0.0f);
+        Vector3fc tipVertex = new Vector3f(0.0f, 0.0f, length);
         // Maybe add ability to offset the perimeter vertices'
         vertices = new Vertex[nPerimeterVertices+2];
         vertices[BASE_CENTER_VERTEX_INDEX] = new Vertex(baseCenterVertex, color);
         vertices[TIP_VERTEX_INDEX] = new Vertex(tipVertex, color);
         for (int vertexIndex = 0; vertexIndex < nPerimeterVertices; vertexIndex++) {
             float angle = (float)(Math.PI*2/(double)nPerimeterVertices*(double)vertexIndex);
-            vertices[PERIMETER_VERTICES_START_INDEX+vertexIndex] = new Vertex(new Vector3f(radius, 0.0f, 0.0f).rotateY(angle), color);
+            vertices[PERIMETER_VERTICES_START_INDEX+vertexIndex] = new Vertex(new Vector3f(radius, 0.0f, 0.0f).rotateZ(angle), color);
         }
         indices = new int[nPerimeterVertices*N_INDICES_PER_PERIMETER_VERTEX];
         for (int vertexIndex = 0; vertexIndex < nPerimeterVertices; vertexIndex++) {

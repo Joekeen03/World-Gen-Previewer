@@ -2,7 +2,9 @@ package main.java.ruby_phantasia.world_gen_previewer.jmeBackend;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
+import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Cylinder;
 import com.jme3.scene.shape.Sphere;
@@ -33,7 +35,7 @@ public class PrimitiveToGeometryConvertor implements GenerationPrimitiveVisitor<
         Sphere sphereMesh = new Sphere(20, 20, sphere.radius);
         Geometry sphereGeometry = new Geometry("Sphere", sphereMesh);
         sphereGeometry.setLocalTranslation(sphere.position.x(), sphere.position.y(), sphere.position.z());
-        sphereGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec4fcToColorRGBA(sphere.color)));
+        sphereGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec3fcAndAlphaToColorRGBA(sphere.color, sphere.alpha)));
         return sphereGeometry;
     }
 
@@ -44,11 +46,8 @@ public class PrimitiveToGeometryConvertor implements GenerationPrimitiveVisitor<
         Vector3f center = DefaultVectors.Z_POSITIVE.mul(cylinder.length/2, new Vector3f())
                 .rotate(cylinder.rotation).add(cylinder.endPosition);
         SetLocalTranslationFromJOMLVector3fc(cylinderGeometry, center);
-        // FIXME implement rotation.
         cylinderGeometry.setLocalRotation(JMEUtility.ConvertJOMLQuaternionToJMEQuaternion(cylinder.rotation));
-
-
-        cylinderGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec4fcToColorRGBA(cylinder.color)));
+        cylinderGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec3fcAndAlphaToColorRGBA(cylinder.color, cylinder.alpha)));
         return cylinderGeometry;
     }
 

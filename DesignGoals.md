@@ -16,6 +16,7 @@
   * Possibly a way to render a "primitive" version of a structure - a structure formed of shapes other than blocks, so you can get the basic details of the structure right w/o having to worry about voxelizing.
     * Could be combined with a voxelizeMesh() method, which takes this raw mesh and converts it to bloxels?
   * Possibly a way to display different versions of a structure side-by-side, like the version created via generate() and the version created by generateCube(), so you can identify discrepancies in the structure
+    * Ideally be able to do a "diff", which highlights (or only shows) cubes that differ between the two methods.
 * Ability to render chunk/cube boundaries
 * Bloxel renderer
   * Initially, just be able to take an array specifying the cube at each location, and render it as a series of cubes, one for each location w/ a block.
@@ -34,6 +35,12 @@
   * Windowed - can be resized
   * Fullscreen - both exclusive and borderless
 * Anti-aliasing
+* Turn on/off different "stages" - so you could toggle primitives and per-cube bloxels on/off individual (for example), with one/both/none rendering.
+* For cube-based generator, control over which cubes generate; so you could get a cross-section of certain cubes (or have very large structures that you only generate part of?)
+  * Or maybe just toggle certain cubes on/off
+  * Also, ability to control order in which cubes generate - to test if your code has any dependencies.
+  *  [Iffy] Ability to generate cubes over time - so at second 1, cubes 1-3 are generated, second 2 cubes 4-6, etc.
+* Ability to render terrain meshes
 
 Iffy:
 * *Maybe* a way to add/remove blocks, to get an idea of what a new feature could look like?

@@ -1,21 +1,24 @@
 package main.java.ruby_phantasia.world_gen_previewer;
 
+import com.jme3.app.SimpleApplication;
 import com.jme3.system.AppSettings;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationPrimitive;
 import main.java.ruby_phantasia.world_gen_previewer.generators.Generator;
-import main.java.ruby_phantasia.world_gen_previewer.generators.TestGenerator;
 import main.java.ruby_phantasia.world_gen_previewer.jmeBackend.JMEBackend;
 import main.java.ruby_phantasia.world_gen_previewer.generators.SphereGenerator;
-import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.LWJGLBackend;
 
 public class Main {
     public static void main(String[] args) {
 //        new LWJGLBackend().Run();
 
-//        Generator generator = new SphereGenerator(1, 100);
-        Generator generator = new TestGenerator();
+        Generator generator = new SphereGenerator(1, 100);
+//        Generator generator = new TestGenerator();
+
         GenerationPrimitive[] spheres = generator.GeneratePrimitives();
-        JMEBackend app = new JMEBackend(spheres);
+        SimpleApplication app = new JMEBackend(spheres);
+
+//        SimpleApplication app = new JMEBloxelApp();
+
         AppSettings settings = new AppSettings(true);
         settings.setTitle("World Generation Previewer");
 

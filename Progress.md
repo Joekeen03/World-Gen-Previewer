@@ -8,7 +8,7 @@ Current task: Bring jMonkeyEngine backend up to same/higher level as LWJGL backe
 * [NYI] Render bloxels with simple textures (no transparency)
 * [IN-PROGRESS] Basic control of camera (WASD, LShift, & Spacebar Minecraft style control).
 * [DONE] Ability to render primitives
-* [In-PROGRESS] Ability to generate & render a structure in full (primitives)
+* [DONE] Ability to generate & render a structure in full (primitives)
 * [DONE] Window can be resized freely.
 
 Next level:

@@ -27,7 +27,7 @@ public class SphereGenerator implements Generator {
         for (int i = 0; i < nSpheres; i++) {
             float radius = rng.nextFloat()*0.2f+0.2f;
             Vector3fc position = new Vector3f(rng.nextFloat()*ABSOLUTE_RANGE-PLUS_MINUS_RANGE, rng.nextFloat()*ABSOLUTE_RANGE-PLUS_MINUS_RANGE, rng.nextFloat()*ABSOLUTE_RANGE-PLUS_MINUS_RANGE);
-            Vector4fc color = new Vector4f(rng.nextFloat(), rng.nextFloat(), rng.nextFloat(), rng.nextFloat());
+            Vector3fc color = new Vector3f(rng.nextFloat(), rng.nextFloat(), rng.nextFloat());
             GenerationSphere sphere = new GenerationSphere(radius, position, color);
             spheres[i] = sphere;
         }

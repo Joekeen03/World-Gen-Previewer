@@ -6,8 +6,10 @@ import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Cylinder;
 import com.jme3.scene.shape.Sphere;
+import main.java.ruby_phantasia.world_gen_previewer.api.GenerationBox;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationCylinder_EndOrigin;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationPrimitiveVisitor;
 import main.java.ruby_phantasia.world_gen_previewer.api.GenerationSphere;
@@ -43,12 +45,22 @@ public class PrimitiveToGeometryConvertor implements GenerationPrimitiveVisitor<
     public Geometry visit(GenerationCylinder_EndOrigin cylinder) {
         Cylinder cylinderMesh = new Cylinder(20, 20, cylinder.radius, cylinder.length, true);
         Geometry cylinderGeometry = new Geometry("Cylinder", cylinderMesh);
+        // A JME cylinder's position is the location of its volumetric center, not the center of an end.
         Vector3f center = DefaultVectors.Z_POSITIVE.mul(cylinder.length/2, new Vector3f())
                 .rotate(cylinder.rotation).add(cylinder.endPosition);
         SetLocalTranslationFromJOMLVector3fc(cylinderGeometry, center);
         cylinderGeometry.setLocalRotation(JMEUtility.ConvertJOMLQuaternionToJMEQuaternion(cylinder.rotation));
         cylinderGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec3fcAndAlphaToColorRGBA(cylinder.color, cylinder.alpha)));
         return cylinderGeometry;
+    }
+
+    @Override
+    public Geometry visit(GenerationBox box) {
+        Box boxMesh = new Box(box.dimensions.x()/2, box.dimensions.y()/2, box.dimensions.z()/2);
+        Geometry boxGeometry = new Geometry("Box", boxMesh);
+        SetLocalTranslationFromJOMLVector3fc(boxGeometry, box.position);
+        boxGeometry.setMaterial(CreateSimpleLitMaterial(JMEUtility.ConvertVec3fcAndAlphaToColorRGBA(box.color, box.alpha)));
+        return boxGeometry;
     }
 
     private static void SetLocalTranslationFromJOMLVector3fc(Geometry geometry, Vector3fc position) {

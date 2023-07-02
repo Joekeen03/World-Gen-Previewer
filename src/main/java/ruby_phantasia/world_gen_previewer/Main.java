@@ -7,6 +7,7 @@ import main.java.ruby_phantasia.world_gen_previewer.generators.Generator;
 import main.java.ruby_phantasia.world_gen_previewer.generators.TestGenerator;
 import main.java.ruby_phantasia.world_gen_previewer.jmeBackend.JMEBackend;
 import main.java.ruby_phantasia.world_gen_previewer.generators.SphereGenerator;
+import main.java.ruby_phantasia.world_gen_previewer.lwjglBackend.LWJGLBackend;
 
 public class Main {
     public static void main(String[] args) {

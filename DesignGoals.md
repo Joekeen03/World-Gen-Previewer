@@ -35,7 +35,13 @@
   * Windowed - can be resized
   * Fullscreen - both exclusive and borderless
 * Anti-aliasing
-* Turn on/off different "stages" - so you could toggle primitives and per-cube bloxels on/off individual (for example), with one/both/none rendering.
+* Turn on/off different "layers" - so you could toggle primitives and per-cube bloxels on/off individual (for example), with one/both/none rendering.
+* Ability to turn on/off parts of a given "layer", so you could say have generation features and bounding boxes for those features both render, and toggle the bounding boxes on/off
+  * Or divide the primitives in a given layer into chunks, which you can turn on/off
+  * Most flexible - likely "tags" tied to each primitive
+  * Ideally, would be able to do this for voxel - how? Would probably want to tie them to "source" primitives
+* Ability to switch between different generation phases, particularly for the voxelized structure
+  * So for my giga-tree mod, you could turn the bark placement phase on/off, seeing how the tree looks before & after bark is placed
 * For cube-based generator, control over which cubes generate; so you could get a cross-section of certain cubes (or have very large structures that you only generate part of?)
   * Or maybe just toggle certain cubes on/off
   * Also, ability to control order in which cubes generate - to test if your code has any dependencies.

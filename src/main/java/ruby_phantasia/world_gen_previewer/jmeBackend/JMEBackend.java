@@ -1,6 +1,11 @@
 package main.java.ruby_phantasia.world_gen_previewer.jmeBackend;
 
+import com.jme3.app.DebugKeysAppState;
+import com.jme3.app.FlyCamAppState;
 import com.jme3.app.SimpleApplication;
+import com.jme3.app.StatsAppState;
+import com.jme3.app.state.ConstantVerifierState;
+import com.jme3.audio.AudioListenerState;
 import com.jme3.input.FlyByCamera;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
@@ -14,15 +19,21 @@ import main.java.ruby_phantasia.world_gen_previewer.api.GenerationPrimitive;
 
 public class JMEBackend extends SimpleApplication {
     private final GenerationPrimitive[] primitives;
-
+    private MinecraftCamera camera;
 
     public JMEBackend(GenerationPrimitive[] primitives) {
         super();
+        stateManager.attach(new MinecraftCameraAppState());
         this.primitives = primitives;
     }
 
     @Override
     public void simpleInitApp() {
+        stateManager.detach(stateManager.getState(FlyCamAppState.class));
+        MinecraftCameraAppState cameraAppState = new MinecraftCameraAppState();
+        cameraAppState.setCamera(new MinecraftCamera(cam));
+        stateManager.attach(cameraAppState);
+//        new MinecraftCamera(cam).registerWithInput(inputManager);
         PrimitiveToGeometryConvertor convertor = new PrimitiveToGeometryConvertor(assetManager);
         for (GenerationPrimitive primitive: primitives) {
             Geometry geometry = primitive.accept(convertor);
